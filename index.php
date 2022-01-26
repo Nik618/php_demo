@@ -132,7 +132,11 @@ $cy = array_map(function($data) { return str_getcsv($data,";");}
                 </td>
                 <td>
                     <?php
-                    echo $rate1[6];
+                    $array = str_split($rate1[6]);
+                    echo 'negative: ';
+                    foreach ($array as $item) {
+                        if ($item != '.') echo $item; else echo ' positive: ';
+                    }
                     ?>
                 </td>
             </tr>
