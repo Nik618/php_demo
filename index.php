@@ -21,9 +21,10 @@ function cache_get_contents($url, $offset = 1000) {
     return $contents;
 }
 
-function cy_get_contents($cy) {
+function cy_get_contents($cy, $param) {
     foreach ($cy as $cy2) {
-        echo '<option value="' . $cy2[0] . '">' . iconv("windows-1251", "utf-8", $cy2[3]) . '</option>';
+        $attr = ($param == $cy2[0]) ? 'selected' : '';
+        echo '<option value="' . $cy2[0] . '"' . $attr . '>' . iconv("windows-1251", "utf-8", $cy2[3]) . '</option>';
     }
 }
 
@@ -42,7 +43,6 @@ $cy = array_map(function($data) { return str_getcsv($data,";");}
         <div id='header'>
             <h2>Currency exchange data</h2>
         </div><br>
-
         <!--<label for="valuteGet"></label><select id="valuteGet">
             <option value="no select">select currency to give</option>
             <?php //cy_get_contents($cy);?>
@@ -52,18 +52,24 @@ $cy = array_map(function($data) { return str_getcsv($data,";");}
             <?php //cy_get_contents($cy);?>
         </select><br>
         <button id="js-button" class="get-button">get a list</button>-->
+        <?php
+        if($_SERVER['REQUEST_METHOD'] == 'POST'){
+            $_SESSION['idGet'] = $_POST['valuteGet'];
+            $_SESSION['idGive'] = $_POST['valuteGive'];
+        }
+        ?>
 
         <form method="post">
             <label>
                 <select name="valuteGet">
                     <option value="no select">select currency to give</option>
-                    <?php cy_get_contents($cy);?>
+                    <?php cy_get_contents($cy, $_SESSION['idGet']);?>
                 </select>
             </label><br>
             <label>
                 <select name="valuteGive">
                     <option value="no select">select currency to get</option>
-                    <?php cy_get_contents($cy);?>
+                    <?php cy_get_contents($cy, $_SESSION['idGive']);?>
                 </select>
             </label>
             <p><input type="submit" value="get a list of exchangers" class="get-button"/></p>
