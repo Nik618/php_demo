@@ -31,11 +31,15 @@ $bestChangeService->zip_load('http://api.bestchange.ru/info.zip');
         </select><br>
         <button id="js-button" class="get-button">get a list</button>
     <br>
-    I want <span class="checkboxValue"></span> in quantity: <label>
-        <input type="text" id="textCount" value="50" size="5">
+    I want <span class="checkboxValue"></span> in quantity: <label for="textCount">
+        <?php echo '<input type="text" id="textCount" value="' . $_GET['valueCount'] . '" size="5">'; ?>
     </label>
     <label>
-        <input type="checkbox" id="checkboxGiveGet" value="ie">
+        <?php
+        if ($_GET['checked'] == 'false')
+            echo '<input type="checkbox" id="checkboxGiveGet" class="checkBox">';
+        else
+            echo '<input type="checkbox" id="checkboxGiveGet" class="checkBox" checked>';?>
     </label>
     (get/give)<br>
     I will <span class="checkboxValueMirror"></span> at the chosen rate: <span class="textValue"></span> (best if not selected)
@@ -47,14 +51,8 @@ $bestChangeService->zip_load('http://api.bestchange.ru/info.zip');
     ?>
 
     <script>
-        $('#js-button').click(function(){
-            const value1 = $('#valuteGive').val();
-            const value2 = $('#valuteGet').val();
-            window.location.href = "index.php?value1=" + value1 + "&value2=" + value2;
-        });
-
+        let checked = true;
         let indexRow = 0;
-        let textValue = 0;
         let checkboxValue = false;
         let rates = <?php echo json_encode($bestChangeService->get_rates()) ?>;
         const checkbox = document.getElementById('checkboxGiveGet');
@@ -67,20 +65,16 @@ $bestChangeService->zip_load('http://api.bestchange.ru/info.zip');
             })
         })
 
+        send();
         document.addEventListener('DOMContentLoaded', function () {
-
             text.addEventListener('input',
                 function() {
                     send();
                 })
-
             checkbox.addEventListener('input',
                 function() {
                     send();
                 })
-
-            send();
-
         });
 
         function send() {
@@ -95,7 +89,15 @@ $bestChangeService->zip_load('http://api.bestchange.ru/info.zip');
                 document.querySelector('.checkboxValue').innerHTML = 'give';
                 document.querySelector('.checkboxValueMirror').innerHTML = 'get';
             }
+            checked = checkbox.checked;
         }
+
+        $('#js-button').click(function() {
+            const valueCount = $('#textCount').val();
+            const value1 = $('#valuteGive').val();
+            const value2 = $('#valuteGet').val();
+            window.location.href = "index.php?value1=" + value1 + "&value2=" + value2 + "&valueCount=" + valueCount + "&checked=" + checked;
+        });
     </script>
 
     <table>
