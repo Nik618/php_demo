@@ -51,9 +51,7 @@ $bestChangeService->zip_load('http://api.bestchange.ru/info.zip');
     ?>
 
     <script>
-        let checked = true;
         let indexRow = 0;
-        let checkboxValue = false;
         let rates = <?php echo json_encode($bestChangeService->get_rates()) ?>;
         const checkbox = document.getElementById('checkboxGiveGet');
         const text = document.getElementById('textCount');
@@ -89,14 +87,13 @@ $bestChangeService->zip_load('http://api.bestchange.ru/info.zip');
                 document.querySelector('.checkboxValue').innerHTML = 'give';
                 document.querySelector('.checkboxValueMirror').innerHTML = 'get';
             }
-            checked = checkbox.checked;
         }
 
         $('#js-button').click(function() {
             const valueCount = $('#textCount').val();
             const value1 = $('#valuteGive').val();
             const value2 = $('#valuteGet').val();
-            window.location.href = "index.php?value1=" + value1 + "&value2=" + value2 + "&valueCount=" + valueCount + "&checked=" + checked;
+            window.location.href = "index.php?value1=" + value1 + "&value2=" + value2 + "&valueCount=" + valueCount + "&checked=" + checkbox.checked;
         });
     </script>
 
