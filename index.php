@@ -51,6 +51,13 @@ $bestChangeService->zip_load('http://api.bestchange.ru/info.zip');
     ?>
 
     <script>
+        $('#js-button').click(function() {
+            const valueCount = $('#textCount').val();
+            const value1 = $('#valuteGive').val();
+            const value2 = $('#valuteGet').val();
+            window.location.href = "index.php?value1=" + value1 + "&value2=" + value2 + "&valueCount=" + valueCount + "&checked=" + checkbox.checked;
+        });
+
         let indexRow = 0;
         let rates = <?php echo json_encode($bestChangeService->get_rates()) ?>;
         const checkbox = document.getElementById('checkboxGiveGet');
@@ -89,12 +96,7 @@ $bestChangeService->zip_load('http://api.bestchange.ru/info.zip');
             }
         }
 
-        $('#js-button').click(function() {
-            const valueCount = $('#textCount').val();
-            const value1 = $('#valuteGive').val();
-            const value2 = $('#valuteGet').val();
-            window.location.href = "index.php?value1=" + value1 + "&value2=" + value2 + "&valueCount=" + valueCount + "&checked=" + checkbox.checked;
-        });
+
     </script>
 
     <table>
