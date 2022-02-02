@@ -84,12 +84,14 @@ $bestChangeService->zip_load('http://api.bestchange.ru/info.zip');
         });
 
         function send() {
+            let value = parseInt(text.value, 10);
+            if (isNaN(value) || value == null) value = 0;
             if (checkbox.checked) {
-                document.querySelector('.textValue').innerHTML = (rates[indexRow][3] / rates[indexRow][4] * parseInt(text.value, 10)).toString();
+                document.querySelector('.textValue').innerHTML = (rates[indexRow][3] / rates[indexRow][4] * value).toString();
                 document.querySelector('.checkboxValue').innerHTML = 'get';
                 document.querySelector('.checkboxValueMirror').innerHTML = 'give';
             } else {
-                document.querySelector('.textValue').innerHTML = (parseInt(text.value, 10) / (rates[indexRow][3] / rates[indexRow][4])).toString();
+                document.querySelector('.textValue').innerHTML = (value / (rates[indexRow][3] / rates[indexRow][4])).toString();
                 document.querySelector('.checkboxValue').innerHTML = 'give';
                 document.querySelector('.checkboxValueMirror').innerHTML = 'get';
             }
