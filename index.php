@@ -5,37 +5,15 @@
     <meta charset='utf-8'>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Currency exchange data</title>
-    <!--<script src="https://code.jquery.com/jquery-3.6.0.js"></script>-->
+    <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
     <link type="text/css" rel="stylesheet" href="/css/style.css"/>
 </head>
 
 <?php
-function cache_get_contents($url, $time = 1000) {
-    $file = '/tmp/file_cache_' . md5($url);
-    if (file_exists($file) && filemtime($file) > time() - $time)
-        return file_get_contents($file);
-    $contents = file_get_contents($url);
-    if ($contents !== false)
-        file_put_contents($file, $contents);
-    return $contents;
-}
-
-function cy_get_contents($cy, $param) {
-    foreach ($cy as $cy2) {
-        $attr = ($param == $cy2[0]) ? 'selected' : '';
-        echo '<option value="' . $cy2[0] . '"' . $attr . '>' . iconv("windows-1251", "utf-8", $cy2[3]) . '</option>';
-    }
-}
-
-file_put_contents($_SERVER['DOCUMENT_ROOT'] . '/files/zip/info.zip', cache_get_contents('http://api.bestchange.ru/info.zip'));
-$zip = new ZipArchive;
-$zip->open('files/zip/info.zip');
-$zip->extractTo('files/');
-$zip->close();
-
-$cy = array_map(function($data) { return str_getcsv($data,";");}
-    , file('files/bm_cy.dat'));
+require_once 'BestСhangeService.php';
+$bestChangeService = new BestСhangeService('bm_exch.dat', 'bm_cy.dat', 'bm_rates.dat');
+$bestChangeService->zip_load('http://api.bestchange.ru/info.zip');
 ?>
 
 <body>
@@ -43,74 +21,80 @@ $cy = array_map(function($data) { return str_getcsv($data,";");}
     <div id='header'>
         <h2>Currency exchange data</h2>
     </div><br>
-    <!--<label for="valuteGive"></label><select id="valuteGive">
+    <label for="valuteGive"></label><select id="valuteGive">
             <option value="no select">select currency to give</option>
-            <?php //cy_get_contents($cy);?>
+            <?php $bestChangeService->cy_get_contents($_GET['value1']);?>
         </select><br>
         <label for="valuteGet"></label><select id="valuteGet">
             <option value="no select">select currency to get</option>
-            <?php //cy_get_contents($cy);?>
+            <?php $bestChangeService->cy_get_contents($_GET['value2']);?>
         </select><br>
-        <button id="js-button" class="get-button">get a list</button>-->
+        <button id="js-button" class="get-button">get a list</button>
+    <br>
+    I want <span class="checkboxValue"></span> in quantity: <label>
+        <input type="text" id="textCount" value="50" size="5">
+    </label>
+    <label>
+        <input type="checkbox" id="checkboxGiveGet" value="ie">
+    </label>
+    (get/give)<br>
+    I will <span class="checkboxValueMirror"></span> at the chosen rate: <span class="textValue"></span> (best if not selected)
+
     <?php
-    if($_SERVER['REQUEST_METHOD'] == 'POST'){
-        $_SESSION['idGive'] = $_POST['valuteGive'];
-        $_SESSION['idGet'] = $_POST['valuteGet'];
-    }
+    $stringValue1 = $bestChangeService->get_string_value($_GET['value1']);
+    $stringValue2 = $bestChangeService->get_string_value($_GET['value2']);
+    $bestChangeService->rows_to_rates($_GET['value1'], $_GET['value2']);
     ?>
 
-    <form method="post">
-        <label>
-            select currency to give: <select name="valuteGive">
-                <option value="no select">select currency to give</option>
-                <?php cy_get_contents($cy, $_SESSION['idGive']);?>
-            </select>
-        </label><br>
-        <label>
-            select currency to get: <select name="valuteGet">
-                <option value="no select">select currency to get</option>
-                <?php cy_get_contents($cy, $_SESSION['idGet']);?>
-            </select>
-        </label>
-        <p><input type="submit" value="get a list of exchangers" class="get-button"/></p>
-    </form>
-
-    <?php
-    $exch = array_map(function($data) { return str_getcsv($data,";");}
-        , file('files/bm_exch.dat'));
-
-    $reserve = 0;
-    //$value1 = $_GET["value1"];
-    //$value2 = $_GET["value2"];
-    $value1 = $_POST['valuteGive'];
-    $value2 = $_POST['valuteGet'];
-    foreach ($cy as $cy2) {
-        if ($cy2[0] == $value1) $stringValue1 = iconv("windows-1251", "utf-8", $cy2[3]);
-        if ($cy2[0] == $value2) $stringValue2 = iconv("windows-1251", "utf-8", $cy2[3]);
-    }
-
-    $rows = array_map(function($data) { return str_getcsv($data,";");}
-        , file('files/bm_rates.dat'));
-    $rates = [];
-
-    foreach ($rows as $row1) {
-        if (($row1[0] == $value1) && ($row1[1] == $value2)) {
-            $rates[] = $row1;
-            $reserve += (double) $row1[5];
-        }
-    }
-    function cmp($a, $b) {
-        return strcmp($a[3]/$a[4], $b[3]/$b[4]);
-    }
-    usort($rates, "cmp")?>
-
-    <!--<script>
+    <script>
         $('#js-button').click(function(){
             const value1 = $('#valuteGive').val();
             const value2 = $('#valuteGet').val();
             window.location.href = "index.php?value1=" + value1 + "&value2=" + value2;
         });
-    </script>-->
+
+        let indexRow = 0;
+        let textValue = 0;
+        let checkboxValue = false;
+        let rates = <?php echo json_encode($bestChangeService->get_rates()) ?>;
+        const checkbox = document.getElementById('checkboxGiveGet');
+        const text = document.getElementById('textCount');
+
+        $(function(){
+            $('button.select-button').on('click',function() {
+                indexRow = $(this).closest('tr').index() - 1;
+                send();
+            })
+        })
+
+        document.addEventListener('DOMContentLoaded', function () {
+
+            text.addEventListener('input',
+                function() {
+                    send();
+                })
+
+            checkbox.addEventListener('input',
+                function() {
+                    send();
+                })
+
+            send();
+
+        });
+
+        function send() {
+            if (checkbox.checked) {
+                document.querySelector('.textValue').innerHTML = (rates[indexRow][3] / rates[indexRow][4] * parseInt(text.value, 10)).toString();
+                document.querySelector('.checkboxValue').innerHTML = 'get';
+                document.querySelector('.checkboxValueMirror').innerHTML = 'give';
+            } else {
+                document.querySelector('.textValue').innerHTML = (parseInt(text.value, 10) / (rates[indexRow][3] / rates[indexRow][4])).toString();
+                document.querySelector('.checkboxValue').innerHTML = 'give';
+                document.querySelector('.checkboxValueMirror').innerHTML = 'get';
+            }
+        }
+    </script>
 
     <table>
         <tr>
@@ -118,41 +102,43 @@ $cy = array_map(function($data) { return str_getcsv($data,";");}
             <th>price: n <?php echo $stringValue1 ?> -> 1 <?php echo $stringValue2 ?></th>
             <th>Reserve</th>
             <th>Feedbacks</th>
+            <th>Action</th>
 
-            <?php foreach ($rates as $rate1) { ?>
+            <?php if ($bestChangeService->get_rates() != null) foreach ($bestChangeService->get_rates() as $rate) { ?>
         <tr>
             <td>
                 <?php
-                foreach ($exch as $exch2) {
-                    if ($exch2[0] == $rate1[2]) {
-                        echo iconv("windows-1251", "utf-8", $exch2[1]);
+                foreach ($bestChangeService->get_exch() as $exch) {
+                    if ($exch[0] == $rate[2]) {
+                        echo iconv("windows-1251", "utf-8", $exch[1]);
                     }
                 }
                 ?>
             </td>
             <td>
                 <?php
-                echo (double) $rate1[3]/$rate1[4];
+                echo (double) $rate[3]/$rate[4];
                 ?>
             </td>
             <td>
                 <?php
-                echo $rate1[5];
+                echo $rate[5];
                 ?>
             </td>
             <td>
                 <?php
-                $array = str_split($rate1[6]);
+                $array = str_split($rate[6]);
                 echo 'negative: ';
                 foreach ($array as $item) {
                     if ($item != '.') echo $item; else echo ' positive: ';
                 }
                 ?>
             </td>
+            <td><button class="select-button">select</button></td>
         </tr>
         <?php } ?>
     </table>
-    <?php echo "total changes: " . count($rates) . " | total reserve: " . $reserve; ?>
+    <?php echo "total changes: " . count($bestChangeService->get_rates()) . " | total reserve: " . $bestChangeService->get_reserve(); ?>
 </div>
 </body>
 </html>
